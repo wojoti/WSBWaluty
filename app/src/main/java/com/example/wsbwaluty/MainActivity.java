@@ -26,36 +26,40 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 
 import android.view.Menu;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
+import android.widget.ListView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.lang.reflect.Array;
+import java.util.ArrayList;
+import java.util.List;
+
 public class MainActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener {
 
-    Button bTest;
-    TextView tV1;
+    ListView listV1;
+    ArrayList<Currency> lista;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        bTest = (Button) findViewById(R.id.bTest);
-        tV1 = (TextView) findViewById(R.id.tV1);
-
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
-        FloatingActionButton fab = findViewById(R.id.fab);
+        /*FloatingActionButton fab = findViewById(R.id.fab);
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
                         .setAction("Action", null).show();
             }
-        });
+        });*/
         DrawerLayout drawer = findViewById(R.id.drawer_layout);
         NavigationView navigationView = findViewById(R.id.nav_view);
         ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
@@ -63,6 +67,15 @@ public class MainActivity extends AppCompatActivity
         drawer.addDrawerListener(toggle);
         toggle.syncState();
         navigationView.setNavigationItemSelectedListener(this);
+
+
+        lista = new ArrayList<Currency>();
+        getUSD("USD");
+        getUSD("GBP");
+        getUSD("CHF");
+        listV1 = findViewById(R.id.listV1);
+        ArrayAdapter<Currency> adapter = new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, lista);
+        listV1.setAdapter(adapter);
     }
 
     @Override
@@ -122,33 +135,37 @@ public class MainActivity extends AppCompatActivity
         return true;
     }
 
-    public void bTest_func(View view) {
-        String url = "http://api.nbp.pl/api/exchangerates/rates/A/USD/";
+    private void getUSD(String currency) {
+        String url = "http://api.nbp.pl/api/exchangerates/rates/A/"+currency+"/";
 // Instantiate the RequestQueue.
-        RequestQueue queue = Volley.newRequestQueue(this);
+        RequestQueue queue = Volley.newRequestQueue(MainActivity.this);
 
 // Request a string response from the provided URL.
         StringRequest stringRequest = new StringRequest(Request.Method.GET, url,
                 new Response.Listener<String>() {
                     @Override
                     public void onResponse(String response) {
+                    String name = "";
+                    String value = "";
                         try {
                             JSONObject reader = new JSONObject(response);
-                            JSONArray ers  = reader.getJSONArray("rates");
+                            name = reader.getString("code");
+                            JSONArray ers = reader.getJSONArray("rates");
+                            value = ers.getJSONObject(0).getString("mid");
 
-                            tV1.setText(ers.getJSONObject(0).getString("mid"));
                         } catch (JSONException e) {
-                            e.printStackTrace();
+                           System.out.println("Problem!");
                         }
+                        lista.add(new Currency(name,value));
                     }
                 }, new Response.ErrorListener() {
             @Override
             public void onErrorResponse(VolleyError error) {
-                tV1.setText("That didn't work!");
+                System.out.println("Problem!");
             }
         });
-
-// Add the request to the RequestQueue.
+        // Add the request to the RequestQueue.
         queue.add(stringRequest);
     }
+
 }
